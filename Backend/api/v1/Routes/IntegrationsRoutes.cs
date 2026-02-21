@@ -8,7 +8,7 @@ public static class IntegrationsRoutes
     public static void MapIntegrationRoutes(this IEndpointRouteBuilder app)
     {
         var integrations = app.MapGroup("/api/v1/integrations");
-    
+
         // Calendly webhooks: meeting booked/cancelled
         integrations.MapPost("/calendly/webhook", CalendlyWebhookHandler);
 
