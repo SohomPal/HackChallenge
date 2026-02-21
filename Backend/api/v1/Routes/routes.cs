@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using Npgsql;
+using Microsoft.AspNetCore.Http;
 
 namespace api.v1.Routes;
 
@@ -144,46 +146,59 @@ public static class Routes
     // HANDLER PLACEHOLDERS (add your actual implementations)
     // ============================================================   
 
-   // Deals
-    private static IResult GetDealsHandler()
+    // Leads
+    private static async Task<IResult> GetLeadsHandler(){
+
+    var config = new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json", optional: false)
+        .Build();
+
+    var connString = config.GetConnectionString("Db");
+
+    const string sql = "SELECT * FROM leads";
+
+    await using var conn = new NpgsqlConnection(connString);
+    await conn.OpenAsync();
+
+    await using var cmd = new NpgsqlCommand(sql, conn);
+    await using var reader = await cmd.ExecuteReaderAsync();
+
+    var results = new List<Dictionary<string, object?>>();
+
+    while (await reader.ReadAsync())
     {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
+        var row = new Dictionary<string, object?>();
+
+        for (int i = 0; i < reader.FieldCount; i++)
+        {
+            row[reader.GetName(i)] =
+                await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
+        }
+
+        results.Add(row);
     }
 
-    private static IResult GetDealByIdHandler(Guid id)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
+    return Results.Ok(results);
+}
 
-    private static IResult GetDealsByLeadHandler(Guid leadId)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
+    private static IResult GetLeadByIdHandler(Guid id) => Results.NotImplemented();
+    private static IResult GetLeadTimelineHandler(Guid id) => Results.NotImplemented();
+    private static IResult SearchLeadsHandler(string q) => Results.NotImplemented();
+    private static IResult CreateLeadHandler() => Results.NotImplemented();
+    private static IResult BulkCreateLeadsHandler() => Results.NotImplemented();
+    private static IResult UpdateLeadHandler(Guid id) => Results.NotImplemented();
+    private static IResult UpdateLeadFitScoreHandler(Guid id) => Results.NotImplemented();
+    private static IResult DeleteLeadHandler(Guid id) => Results.NotImplemented();
 
-    private static IResult CreateDealHandler()
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
-
-    private static IResult UpdateDealHandler(Guid id)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
-
-    private static IResult UpdateDealStageHandler(Guid id)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
-
-    private static IResult UpdateNextActionDateHandler(Guid id)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
-
-    private static IResult DeleteDealHandler(Guid id)
-    {
-        return Results.StatusCode(StatusCodes.Status501NotImplemented);
-    }
+    // Deals
+    private static IResult GetDealsHandler() => Results.NotImplemented();
+    private static IResult GetDealByIdHandler(Guid id) => Results.NotImplemented();
+    private static IResult GetDealsByLeadHandler(Guid leadId) => Results.NotImplemented();
+    private static IResult CreateDealHandler() => Results.NotImplemented();
+    private static IResult UpdateDealHandler(Guid id) => Results.NotImplemented();
+    private static IResult UpdateDealStageHandler(Guid id) => Results.NotImplemented();
+    private static IResult UpdateNextActionDateHandler(Guid id) => Results.NotImplemented();
+    private static IResult DeleteDealHandler(Guid id) => Results.NotImplemented();
 
     // Interactions
     private static IResult GetInteractionsHandler()
