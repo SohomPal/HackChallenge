@@ -22,79 +22,10 @@ public static class Routes
     // ----------------------------
    
 
-    // ----------------------------
-    // DEALS / PIPELINE (CRUD + stage transitions + value)
-    // ----------------------------
-    public static void MapDealRoutes(this IEndpointRouteBuilder app)
-    {
-        var deals = app.MapGroup("/api/v1/deals");
+    
 
-        // GET
-        deals.MapGet("", GetDealsHandler);                          // list deals (filter by stage, leadId, date range)
-        deals.MapGet("/{id:guid}", GetDealByIdHandler);             // deal details
-        deals.MapGet("/by-lead/{leadId:guid}", GetDealsByLeadHandler);
 
-        // POST
-        deals.MapPost("", CreateDealHandler);                       // create deal for a lead
-
-        // PATCH
-        deals.MapPatch("/{id:guid}", UpdateDealHandler);            // update stage/value/probability/nextActionDate
-        deals.MapPatch("/{id:guid}/stage", UpdateDealStageHandler); // stage transition (triggers automation rules)
-        deals.MapPatch("/{id:guid}/next-action", UpdateNextActionDateHandler);
-
-        // DELETE
-        deals.MapDelete("/{id:guid}", DeleteDealHandler);
-    }
-
-    // ----------------------------
-    // INTERACTIONS (email/call/meeting logging + transcripts)
-    // ----------------------------
-    public static void MapInteractionRoutes(this IEndpointRouteBuilder app)
-    {
-        var interactions = app.MapGroup("/api/v1/interactions");
-
-        // GET
-        interactions.MapGet("", GetInteractionsHandler);                                // list (filter by leadId, type, date)
-        interactions.MapGet("/{id:guid}", GetInteractionByIdHandler);
-        interactions.MapGet("/by-lead/{leadId:guid}", GetInteractionsByLeadHandler);
-
-        // POST
-        interactions.MapPost("", CreateInteractionHandler);                             // create interaction (summary/transcript optional)
-        interactions.MapPost("/{id:guid}/attach-transcript", AttachTranscriptHandler); // attach transcript text
-
-        // PATCH
-        interactions.MapPatch("/{id:guid}", UpdateInteractionHandler);                  // update summary/sentiment/transcript
-
-        // DELETE
-        interactions.MapDelete("/{id:guid}", DeleteInteractionHandler);
-    }
-
-    // ----------------------------
-    // TASKS (follow-ups, alerts, automation)
-    // ----------------------------
-    public static void MapTaskRoutes(this IEndpointRouteBuilder app)
-    {
-        var tasks = app.MapGroup("/api/v1/tasks");
-
-        // GET
-        tasks.MapGet("", GetTasksHandler);                              // list tasks (filter: leadId, dueBefore, completed)
-        tasks.MapGet("/{id:guid}", GetTaskByIdHandler);
-        tasks.MapGet("/by-lead/{leadId:guid}", GetTasksByLeadHandler);
-        tasks.MapGet("/due-today", GetTasksDueTodayHandler);            // dashboard widget
-        tasks.MapGet("/overdue", GetOverdueTasksHandler);
-
-        // POST
-        tasks.MapPost("", CreateTaskHandler);                           // create task
-        tasks.MapPost("/auto/after-demo/{leadId:guid}", ScheduleAfterDemoFollowUpsHandler); // schedules 3 follow-ups
-
-        // PATCH
-        tasks.MapPatch("/{id:guid}", UpdateTaskHandler);                // update description/dueDate
-        tasks.MapPatch("/{id:guid}/complete", MarkTaskCompleteHandler); // toggle complete
-        tasks.MapPatch("/{id:guid}/reopen", ReopenTaskHandler);
-
-        // DELETE
-        tasks.MapDelete("/{id:guid}", DeleteTaskHandler);
-    }
+    
 
     // ----------------------------
     // AI ROUTES (research + drafting + analysis)
