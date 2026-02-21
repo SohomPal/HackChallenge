@@ -5,12 +5,8 @@ namespace api.v1.Routes;
 
 public static class Routes
 {
-    public static void MapV1Routes(this IEndpointRouteBuilder app)
-    {
-        app.MapLeadRoutes();
-        app.MapDealRoutes();
-        app.MapInteractionRoutes();
-        app.MapTaskRoutes();
+    public static void MapRoutes(this IEndpointRouteBuilder app){
+        RouteGroupBuilder todoRoutes = app.MapGroup("/api/v1/backend");
 
         // AI “actions” (research, drafts, analysis)
         app.MapAiRoutes();
