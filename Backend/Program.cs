@@ -10,7 +10,7 @@ DotNetEnv.Env.Load();
 Console.WriteLine("Started! more");
 
 var builder = WebApplication.CreateBuilder(args);
-var corsOrigin = "_myAllowSpecificOrigins";
+var corsOrigin = "AllowAll";
 
 
 builder.Services.AddSingleton<IDbConnection>(sp =>
