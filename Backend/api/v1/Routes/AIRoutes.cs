@@ -260,30 +260,26 @@ public static class AiRoutes{
         if (string.IsNullOrWhiteSpace(req.Transcript))
             return Results.BadRequest("Transcript required");
 
-        var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json")
-            .Build();
-
         var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
         var prompt = $$"""
-    You are a B2B SaaS deal valuation expert.
+            You are a B2B SaaS deal valuation expert.
 
-    Based ONLY on the transcript, estimate potential deal value.
+            Based ONLY on the transcript, estimate potential deal value.
 
-    If price signals are weak, infer a reasonable range from company size, urgency, and pain.
+            If price signals are weak, infer a reasonable range from company size, urgency, and pain.
 
-    Return ONLY raw JSON:
+            Return ONLY raw JSON:
 
-    {
-    "estimated_value_usd": number,
-    "value_range": "low-high",
-    "confidence": 0-1,
-    "signals_used": []
-    }
+            {
+            "estimated_value_usd": number,
+            "value_range": "low-high",
+            "confidence": 0-1,
+            "signals_used": []
+            }
 
-    Transcript:
-    {{req.Transcript}}
-    """;
+            Transcript:
+            {{req.Transcript}}
+        """;
 
         var payload = new
         {

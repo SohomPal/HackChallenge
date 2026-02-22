@@ -26,6 +26,19 @@ builder.Services.AddSingleton<IDbConnection>(sp =>
     return new NpgsqlConnection(connString);
 });
 
+//Add cors for front end
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
+
 //inject repositories
 
 builder.Services.AddScoped<LeadRepository>();
