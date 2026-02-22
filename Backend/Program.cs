@@ -46,7 +46,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<LeadRepository>();
 builder.Services.AddScoped<InteractionRepository>();
 
-
 var app = builder.Build();
 
 app.UseCors(corsOrigin);

@@ -77,9 +77,6 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
             </p>
           </div>
         </div>
-        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${getScoreBg(lead.aiFitScore)} ${getScoreColor(lead.aiFitScore)}`}>
-          {lead.aiFitScore}
-        </div>
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
