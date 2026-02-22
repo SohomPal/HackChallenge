@@ -15,10 +15,10 @@ AI Sales Journey Copilot is a full-stack application that helps sales teams auto
 ## Tech Stack
 
 * **Frontend:** Next.js, TailwindCSS
-* **Backend:** FastAPI (Python)
+* **Backend:** Minimal API (C#)
 * **Database:** Supabase (Postgres)
-* **AI:** OpenAI / Claude, Whisper / Deepgram
-* **Integrations:** Calendly, Twilio, ElevenLabs
+* **AI:** GeminiAI
+* **Integrations:** Calendly
 
 ## Database Entities
 
