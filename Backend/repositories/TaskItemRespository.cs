@@ -13,7 +13,7 @@ public class TaskItemRepository
         _db = db;
     }
 
-    public async Task<IEnumerable<TaskItem>> Get()
+    public async Task<IEnumerable<TaskItem?>> Get()
     {
             var sql = "SELECT * FROM Leads ORDER BY Name";
         return await _db.QueryAsync<TaskItem>(sql);
