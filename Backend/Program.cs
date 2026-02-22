@@ -1,5 +1,6 @@
 using System.Data;
 using System.Diagnostics;
+using Backend.Repositories;
 using api.v1.Routes;
 using Npgsql;
 
@@ -24,6 +25,11 @@ builder.Services.AddSingleton<IDbConnection>(sp =>
     // Return a new PostgreSQL connection
     return new NpgsqlConnection(connString);
 });
+
+//inject repositories
+builder.Services.AddScoped<LeadRepository>();
+builder.Services.AddScoped<InteractionRepository>();
+
 
 var app = builder.Build();
 

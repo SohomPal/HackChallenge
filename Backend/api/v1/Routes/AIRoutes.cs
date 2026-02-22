@@ -1,4 +1,6 @@
+using Backend.Repositories;
 using Backend.Models;
+
 // using GenerativeAI;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -240,56 +242,20 @@ public static class AiRoutes{
     }
 
     // Recommendations
-    private static async Task<IResult> RecommendNextActionsHandler(long leadId, IDbConnection db)
+    private static async Task<IResult> RecommendNextActionsHandler(
+        int leadId,
+        LeadRepository leadRepo,
+        InteractionRepository interactionRepo)
     {
         var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
-        var conn = (NpgsqlConnection)db;
-
-        if (conn.State != ConnectionState.Open)
-            await conn.OpenAsync();
-
         // ⭐ get lead
-        const string leadSql = "SELECT * FROM leads WHERE id = @id";
-        await using var leadCmd = new NpgsqlCommand(leadSql, conn);
-        leadCmd.Parameters.AddWithValue("id", leadId);
-
-        await using var leadReader = await leadCmd.ExecuteReaderAsync();
-
-        if (!await leadReader.ReadAsync())
+        var lead = await leadRepo.GetLeadById(leadId);
+        if (lead is null)
             return Results.NotFound("Lead not found");
 
-        var lead = new Dictionary<string, object?>();
-
-        for (int i = 0; i < leadReader.FieldCount; i++)
-            lead[leadReader.GetName(i)] =
-                await leadReader.IsDBNullAsync(i) ? null : leadReader.GetValue(i);
-
-        await leadReader.CloseAsync();
-
-        // ⭐ get interactions
-        const string timelineSql =
-            "SELECT * FROM interactions WHERE lead_id = @id ORDER BY created_at DESC LIMIT 10";
-
-        await using var timelineCmd = new NpgsqlCommand(timelineSql, conn);
-        timelineCmd.Parameters.AddWithValue("id", leadId);
-
-        await using var timelineReader = await timelineCmd.ExecuteReaderAsync();
-
-        var timeline = new List<Dictionary<string, object?>>();
-
-        while (await timelineReader.ReadAsync())
-        {
-            var row = new Dictionary<string, object?>();
-
-            for (int i = 0; i < timelineReader.FieldCount; i++)
-                row[timelineReader.GetName(i)] =
-                    await timelineReader.IsDBNullAsync(i) ? null : timelineReader.GetValue(i);
-
-            timeline.Add(row);
-        }
-
-        await timelineReader.CloseAsync();
+        // ⭐ get recent interactions
+        var timeline = await interactionRepo.GetRecentByLeadId(leadId);
 
         // ⭐ AI prompt
         var prompt = $$"""
@@ -310,7 +276,7 @@ public static class AiRoutes{
 
             Recent Activity:
             {{JsonSerializer.Serialize(timeline)}}
-        """;
+            """;
 
         var payload = new
         {
@@ -348,7 +314,6 @@ public static class AiRoutes{
             .GetProperty("text")
             .GetString();
 
-        // ⭐ clean LLM output
         text = text?
             .Replace("```json", "", StringComparison.OrdinalIgnoreCase)
             .Replace("```", "")
