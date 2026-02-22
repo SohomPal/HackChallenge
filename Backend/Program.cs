@@ -31,7 +31,6 @@ builder.Services.AddSingleton<IDbConnection>(sp =>
 builder.Services.AddScoped<LeadRepository>();
 builder.Services.AddScoped<InteractionRepository>();
 
-
 var app = builder.Build();
 
 app.Use(async (context, next) =>

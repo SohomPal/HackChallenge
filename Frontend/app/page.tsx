@@ -1,18 +1,18 @@
 "use client"
 
-import { useState, useMemo } from "react"
+
+import { useState, useMemo, useEffect } from "react"
 import { TopBar } from "@/components/top-bar"
 import { PipelineBoard } from "@/components/pipeline-board"
 import { AIPriorities } from "@/components/ai-priorities"
 import { LeadDrawer } from "@/components/lead-drawer"
 import { TaskCenter } from "@/components/task-center"
-import {
-  leads as allLeads,
-  topPriorities,
-  tasks,
-  automationRules,
-} from "@/lib/mock-data"
-import type { Lead } from "@/lib/mock-data"
+import { api } from "@/lib/api"
+
+// keep types from mock-data since UI already uses them
+import type { Lead, Task, AutomationRule } from "@/lib/mock-data"
+import { tasks as mockTasks, automationRules as mockRules } from "@/lib/mock-data"
+
 import type { AppView } from "@/components/top-bar"
 
 export default function DashboardPage() {
@@ -21,42 +21,116 @@ export default function DashboardPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [activeView, setActiveView] = useState<AppView>("pipeline")
 
+  // ⭐ backend state
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [priorities, setPriorities] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // ⭐ fallback state (until backend endpoints exist)
+  const [tasks] = useState<Task[]>(mockTasks)
+  const [automationRules] = useState<AutomationRule[]>(mockRules)
+
+  /**
+   * STEP 1 — load leads
+   */
+  useEffect(() => {
+    async function loadLeads() {
+      try {
+        setLoading(true)
+        const data = await api.getLeads()
+
+        /**
+         * IMPORTANT:
+         * Backend shape may differ from UI Lead type.
+         * Map here if needed.
+         *
+         * Adjust fields ONLY if your API differs.
+         */
+        // @ts-ignore
+        const mapped: Lead[] = data.map((l: any) => ({
+          id: l.id,
+          name: l.name,
+          company: l.company,
+          stage: l.stage ?? "new",
+          score: l.score ?? 0,
+          lastContact: l.lastContact ?? "",
+          owner: l.owner ?? "",
+        }))
+
+        setLeads(mapped)
+      } catch (e: any) {
+        console.error(e)
+        setError("Failed to load leads")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadLeads()
+  }, [])
+
+  /**
+   * STEP 2 — load AI priorities
+   */
+  useEffect(() => {
+    if (!leads.length) return
+
+    async function loadPriorities() {
+      try {
+        // simple strategy → top 5 leads
+        const subset = leads.slice(0, 5)
+
+        await Promise.all(
+          subset.map((l) =>
+            api.getNextActions(Number(l.id)).catch(() => null) // don't crash page
+          )
+        )
+
+        setPriorities(subset)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    loadPriorities()
+  }, [leads])
+
+  /**
+   * Search filter
+   */
   const filteredLeads = useMemo(() => {
-    if (!searchQuery.trim()) return allLeads
+    if (!searchQuery.trim()) return leads
     const q = searchQuery.toLowerCase()
-    return allLeads.filter(
+
+    return leads.filter(
       (lead) =>
         lead.name.toLowerCase().includes(q) ||
-        lead.company.toLowerCase().includes(q) ||
-        lead.title.toLowerCase().includes(q)
+        lead.company.toLowerCase().includes(q)
     )
-  }, [searchQuery])
+  }, [searchQuery, leads])
 
-  const handleLeadClick = (lead: Lead) => {
-    setSelectedLead(lead)
-    setDrawerOpen(true)
+  /**
+   * UI states
+   */
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
+        Loading dashboard…
+      </div>
+    )
   }
 
-  const handleLeadClickById = (leadId: string) => {
-    const lead = allLeads.find((l) => l.id === leadId)
-    if (lead) {
-      setSelectedLead(lead)
-      setDrawerOpen(true)
-    }
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center text-sm text-red-500">
+        {error}
+      </div>
+    )
   }
-
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false)
-    setTimeout(() => setSelectedLead(null), 300)
-  }
-
-  const totalPipeline = allLeads.reduce((sum, l) => sum + l.estimatedValue, 0)
-  const highCount = allLeads.filter(
-    (l) => l.convertLikelihood === "High"
-  ).length
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col">
       <TopBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -64,65 +138,46 @@ export default function DashboardPage() {
         onViewChange={setActiveView}
       />
 
-      {/* Stats strip */}
-      <div className="flex items-center gap-6 border-b border-border bg-card/50 px-6 py-2">
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Total Leads</span>
-          <span className="font-semibold text-foreground">
-            {allLeads.length}
-          </span>
-        </div>
-        <div className="h-3 w-px bg-border" />
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Pipeline Value</span>
-          <span className="font-semibold text-primary">
-            ${(totalPipeline / 1000).toFixed(0)}k
-          </span>
-        </div>
-        <div className="h-3 w-px bg-border" />
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">High Likelihood</span>
-          <span className="font-semibold text-foreground">{highCount}</span>
-        </div>
-        <div className="h-3 w-px bg-border" />
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Avg Fit Score</span>
-          <span className="font-semibold text-foreground">
-            {Math.round(
-              allLeads.reduce((sum, l) => sum + l.aiFitScore, 0) /
-                allLeads.length
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* Main content */}
-      {activeView === "pipeline" ? (
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            <PipelineBoard leads={filteredLeads} onLeadClick={handleLeadClick} />
-          </div>
-          <div className="hidden w-[340px] shrink-0 lg:block">
-            <AIPriorities
-              priorities={topPriorities}
-              onLeadClick={handleLeadClick}
+      <div className="flex flex-1 overflow-hidden">
+        {activeView === "pipeline" && (
+          <>
+            <PipelineBoard
+              leads={filteredLeads}
+              onLeadClick={(lead) => {
+                setSelectedLead(lead)
+                setDrawerOpen(true)
+              }}
             />
-          </div>
-        </div>
-      ) : (
-        <div className="flex-1 overflow-hidden">
+
+            <AIPriorities
+              priorities={priorities}
+              onLeadClick={(lead) => {
+                setSelectedLead(lead)
+                setDrawerOpen(true)
+              }}
+            />
+          </>
+        )}
+
+        {activeView === "tasks" && (
           <TaskCenter
             tasks={tasks}
             automationRules={automationRules}
-            onLeadClick={handleLeadClickById}
+            onLeadClick={(id) => {
+              const lead = leads.find((l) => l.id === id)
+              if (lead) {
+                setSelectedLead(lead)
+                setDrawerOpen(true)
+              }
+            }}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <LeadDrawer
         lead={selectedLead}
         open={drawerOpen}
-        onClose={handleCloseDrawer}
+        onClose={() => setDrawerOpen(false)}
       />
     </div>
   )
