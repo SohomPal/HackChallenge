@@ -1,5 +1,5 @@
+// src/app/page.tsx
 "use client"
-
 
 import { useState, useMemo, useEffect } from "react"
 import { TopBar } from "@/components/top-bar"
@@ -38,24 +38,33 @@ export default function DashboardPage() {
     async function loadLeads() {
       try {
         setLoading(true)
+        setError(null)
+
         const data = await api.getLeads()
 
         /**
-         * IMPORTANT:
-         * Backend shape may differ from UI Lead type.
-         * Map here if needed.
-         *
-         * Adjust fields ONLY if your API differs.
+         * Adapt backend lead → UI Lead (from mock-data)
+         * Backend has: id, name, company, email, phone, linkedIn, fitScore
+         * UI expects: stage, score, owner, lastContact, aiReasons, etc.
          */
-        // @ts-ignore
         const mapped: Lead[] = data.map((l: any) => ({
-          id: l.id,
-          name: l.name,
-          company: l.company,
-          stage: l.stage ?? "new",
-          score: l.score ?? 0,
-          lastContact: l.lastContact ?? "",
-          owner: l.owner ?? "",
+          // IMPORTANT: keep id type aligned with your UI Lead type.
+          // If your UI Lead.id is a string, use String(l.id).
+          id: String(l.id),
+
+          name: l.name ?? "",
+          company: l.company ?? "",
+
+          // map FitScore -> score
+          score: typeof l.fitScore === "number" ? l.fitScore : 0,
+
+          // fields not in DB → safe defaults
+          stage: "new",
+          lastContact: "",
+          owner: "",
+
+          // AI fields used by AIPriorities
+          aiReasons: [],
         }))
 
         setLeads(mapped)
@@ -72,24 +81,23 @@ export default function DashboardPage() {
 
   /**
    * STEP 2 — load AI priorities
+   * (you don't have AI reasons yet, so we just pick top 5 by score)
    */
   useEffect(() => {
     if (!leads.length) return
 
     async function loadPriorities() {
       try {
-        // simple strategy → top 5 leads
-        const subset = leads.slice(0, 5)
+        // example: top 5 by score
+        const subset = [...leads].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)).slice(0, 5)
 
-        await Promise.all(
-          subset.map((l) =>
-            api.getNextActions(Number(l.id)).catch(() => null) // don't crash page
-          )
-        )
+        // optional: warm next-action endpoint if it exists; ignore failures
+        await Promise.all(subset.map((l) => api.getNextActions(Number(l.id)).catch(() => null)))
 
         setPriorities(subset)
       } catch (e) {
         console.error(e)
+        setPriorities(leads.slice(0, 5))
       }
     }
 
@@ -105,8 +113,8 @@ export default function DashboardPage() {
 
     return leads.filter(
       (lead) =>
-        lead.name.toLowerCase().includes(q) ||
-        lead.company.toLowerCase().includes(q)
+        (lead.name ?? "").toLowerCase().includes(q) ||
+        (lead.company ?? "").toLowerCase().includes(q)
     )
   }, [searchQuery, leads])
 
@@ -164,7 +172,8 @@ export default function DashboardPage() {
             tasks={tasks}
             automationRules={automationRules}
             onLeadClick={(id) => {
-              const lead = leads.find((l) => l.id === id)
+              // make id matching robust (string vs number)
+              const lead = leads.find((l) => String(l.id) === String(id))
               if (lead) {
                 setSelectedLead(lead)
                 setDrawerOpen(true)
