@@ -2,6 +2,13 @@
 
 AI Sales Journey Copilot is a full-stack application that helps sales teams automate and manage the entire sales process using AI. The platform combines lead discovery, outreach generation, pipeline tracking, conversation analysis, and automated follow-ups into one system.
 
+<p align="center">
+  <a href="https://youtu.be/K2VI26Ku_vQ">
+    <img src="https://img.youtube.com/vi/K2VI26Ku_vQ/maxresdefault.jpg" width="700">
+  </a>
+</p>
+
+
 ## Features
 
 * **Lead discovery** with AI-powered research and cold email drafting
