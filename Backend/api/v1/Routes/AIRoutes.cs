@@ -21,7 +21,7 @@ public static class AiRoutes{
 
         // Outreach drafting
         ai.MapPost("/draft/linkedin", DraftLinkedInMessageHandler);  // input: leadId -> output: DM text
-        ai.MapPost("/draft/follow-up", DraftFollowUpHandler);        // input: leadId + last interaction -> output follow-up
+        ai.MapPost("/draft/follow-up", DraftFollowUpHandler); // input: leadId + last interaction -> output follow-up
 
         // Call / meeting analysis
         ai.MapPost("/analyze/transcript", AnalyzeTranscriptHandler); // input: interactionId/transcript -> output: sentiment, objections, next steps
