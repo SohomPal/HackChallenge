@@ -1,6 +1,8 @@
 using Backend.Models;
-using GenerativeAI;
+// using GenerativeAI;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
+using System.Data;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -70,8 +72,7 @@ public static class AiRoutes{
             .AddJsonFile("appsettings.json")
             .Build();
 
-        var apiKey = config["Gemini:ApiKey"];
-
+        var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
         var prompt = $$"""
     You are a sales conversation analyzer.
 
@@ -160,8 +161,7 @@ public static class AiRoutes{
             .AddJsonFile("appsettings.json")
             .Build();
 
-        var apiKey = config["Gemini:ApiKey"];
-
+        var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
         var prompt = $$"""
     You are a B2B SaaS deal valuation expert.
 
@@ -244,7 +244,6 @@ public static class AiRoutes{
     {
         var apiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
 
-        // cast to NpgsqlConnection so we can use async APIs
         var conn = (NpgsqlConnection)db;
 
         if (conn.State != ConnectionState.Open)
@@ -268,7 +267,7 @@ public static class AiRoutes{
 
         await leadReader.CloseAsync();
 
-        // ⭐ get interactions (not lead_timeline — matches your schema)
+        // ⭐ get interactions
         const string timelineSql =
             "SELECT * FROM interactions WHERE lead_id = @id ORDER BY created_at DESC LIMIT 10";
 
@@ -294,24 +293,24 @@ public static class AiRoutes{
 
         // ⭐ AI prompt
         var prompt = $$"""
-    You are an AI sales assistant.
+            You are an AI sales assistant.
 
-    Based on the lead data and recent activity, recommend next actions to progress the deal.
+            Based on the lead data and recent activity, recommend next actions to progress the deal.
 
-    Return ONLY raw JSON:
+            Return ONLY raw JSON:
 
-    {
-    "next_actions": [],
-    "priority": "low | medium | high",
-    "reasoning": ""
-    }
+            {
+            "next_actions": [],
+            "priority": "low | medium | high",
+            "reasoning": ""
+            }
 
-    Lead:
-    {{JsonSerializer.Serialize(lead)}}
+            Lead:
+            {{JsonSerializer.Serialize(lead)}}
 
-    Recent Activity:
-    {{JsonSerializer.Serialize(timeline)}}
-    """;
+            Recent Activity:
+            {{JsonSerializer.Serialize(timeline)}}
+        """;
 
         var payload = new
         {
@@ -332,7 +331,7 @@ public static class AiRoutes{
         using var http = new HttpClient();
 
         var response = await http.PostAsync(
-            $"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={apiKey}",
+            $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}",
             new StringContent(json, Encoding.UTF8, "application/json"));
 
         var respText = await response.Content.ReadAsStringAsync();

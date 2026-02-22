@@ -1,5 +1,6 @@
 using System.Data;
 using System.Diagnostics;
+using api.v1.Routes;
 using Npgsql;
 
 //Load .env as early as possible
@@ -9,7 +10,7 @@ Console.WriteLine("Started!");
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IDbConnection>(static sp =>
+builder.Services.AddSingleton<IDbConnection>(sp =>
 {
     // Get the environment variable
     var connString = Environment.GetEnvironmentVariable("SUPA_BASE_URI");
@@ -37,5 +38,11 @@ app.Use(async (context, next) =>
 
 
 app.MapGet("/", () => "Hello World!");
+app.MapAiRoutes();
+app.MapDealRoutes();
+app.MapIntegrationRoutes();
+app.MapInteractionRoutes();
+app.MapLeadRoutes();
+app.MapTasksRoutes();
 
 app.Run();
