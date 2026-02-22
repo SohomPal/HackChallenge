@@ -25,7 +25,7 @@ public static class AiRoutes{
         ai.MapPost("/discover/leads", DiscoverLeadsHandler);         // input: ICP -> output: list of leads (optional)
 
         // Outreach drafting
-        ai.MapPost("/draft/cold-email", DraftColdEmailHandler);      // input: leadId + context -> output: subject/body
+        ai.MapPost("/draft/cold-email/{leadId:int}", DraftColdEmailHandler);      // input: leadId + context -> output: subject/body
         ai.MapPost("/draft/linkedin", DraftLinkedInMessageHandler);  // input: leadId -> output: DM text
         ai.MapPost("/draft/follow-up", DraftFollowUpHandler);        // input: leadId + last interaction -> output follow-up
 
