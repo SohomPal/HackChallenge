@@ -1,10 +1,5 @@
 using Backend.Repositories;
 using Backend.Models;
-
-// using GenerativeAI;
-using Microsoft.Extensions.Configuration;
-using Npgsql;
-using System.Data;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -25,7 +20,6 @@ public static class AiRoutes{
         ai.MapPost("/discover/leads", DiscoverLeadsHandler);         // input: ICP -> output: list of leads (optional)
 
         // Outreach drafting
-        ai.MapPost("/draft/cold-email/{leadId:int}", DraftColdEmailHandler);      // input: leadId + context -> output: subject/body
         ai.MapPost("/draft/linkedin", DraftLinkedInMessageHandler);  // input: leadId -> output: DM text
         ai.MapPost("/draft/follow-up", DraftFollowUpHandler);        // input: leadId + last interaction -> output follow-up
 
@@ -34,6 +28,7 @@ public static class AiRoutes{
         ai.MapPost("/estimate/deal-value", EstimateDealValueHandler);// input: leadId + transcript/history -> output: value_estimate + probability
 
         // Recommendations
+        ai.MapGet("/draft/cold-email/{leadId:int}", DraftColdEmailHandler);      // input: leadId + context -> output: subject/body
         ai.MapGet("/recommend/next-actions/{leadId:int}", RecommendNextActionsHandler);
     }
 
